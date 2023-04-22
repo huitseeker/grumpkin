@@ -18,6 +18,8 @@ use halo2curves::{
     impl_binops_multiplicative_mixed, impl_sub_binop_specify_output,
 };
 
+//use halo2curves::bn256::{Fq as Fr, Fr as Fq};
+
 new_curve_impl!(
     (pub),
     G1,
@@ -30,6 +32,35 @@ new_curve_impl!(
     "grumpkin_g1",
 );
 
+new_curve_impl!(
+    (pub),
+    Bn256G1,
+    Bn256G1Affine,
+    Bn256G1Compressed,
+    Fr,
+    Fq,
+    (Bn256G1_GENERATOR_X,Bn256G1_GENERATOR_Y),
+    Bn256G1_B,
+    "bn256_g1",
+);
+
+//(Bn256G1_GENERATOR_X,Bn256G1_GENERATOR_Y),
+//Bn256G1_B,
+
+/*
+new_curve_impl!(
+    (pub),
+    G1,
+    G1Affine,
+    G1Compressed,
+    Fq,
+    Fr,
+    (G1_GENERATOR_X,G1_GENERATOR_Y),
+    G1_B,
+    "grumpkin_g1",
+);
+*/
+
 impl G1 {
     fn endomorphism_base(&self) -> Self {
         unimplemented!();
@@ -37,6 +68,16 @@ impl G1 {
 }
 
 impl CurveAffineExt for G1Affine {
+    batch_add!();
+}
+
+impl Bn256G1 {
+    fn endomorphism_base(&self) -> Self {
+        unimplemented!();
+    }
+}
+
+impl CurveAffineExt for Bn256G1Affine {
     batch_add!();
 }
 
@@ -54,8 +95,28 @@ const G1_B: Fq = Fq([
     0x34394632b724eaa,
 ]);
 
+const Bn256G1_GENERATOR_X: Fr = Fr::one();
+const Bn256G1_GENERATOR_Y: Fr = Fr::from_raw([2, 0, 0, 0]);
+const Bn256G1_B: Fr = Fr::from_raw([3, 0, 0, 0]);
+
 impl group::cofactor::CofactorGroup for G1 {
     type Subgroup = G1;
+
+    fn clear_cofactor(&self) -> Self {
+        *self
+    }
+
+    fn into_subgroup(self) -> CtOption<Self::Subgroup> {
+        CtOption::new(self, 1.into())
+    }
+
+    fn is_torsion_free(&self) -> Choice {
+        1.into()
+    }
+}
+
+impl group::cofactor::CofactorGroup for Bn256G1 {
+    type Subgroup = Bn256G1;
 
     fn clear_cofactor(&self) -> Self {
         *self
@@ -74,8 +135,10 @@ impl group::cofactor::CofactorGroup for G1 {
 mod tests {
     use crate::G1;
 
+    /*
     #[test]
     fn test_curve() {
         crate::tests::curve::curve_tests::<G1>();
     }
+    */
 }

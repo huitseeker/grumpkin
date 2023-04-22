@@ -8,6 +8,7 @@ use core::convert::TryInto;
 use core::fmt;
 use core::ops::{Add, Mul, Neg, Sub};
 use ff::{Field, FromUniformBytes, PrimeField, WithSmallOrderMulGroup};
+use ff::{FieldBits, PrimeFieldBits};
 use halo2curves::bn256::LegendreSymbol;
 use rand::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
@@ -212,6 +213,10 @@ impl ff::Field for Fr {
     }
 }
 
+impl Fr {
+    pub const MODULUS_F: Fr = MODULUS;
+}
+
 impl ff::PrimeField for Fr {
     type Repr = [u8; 32];
 
@@ -295,6 +300,30 @@ impl FromUniformBytes<64> for Fr {
 
 impl WithSmallOrderMulGroup<3> for Fr {
     const ZETA: Self = ZETA;
+}
+
+type ReprBits = [u64; 4];
+
+impl PrimeFieldBits for Fr {
+    type ReprBits = ReprBits;
+
+    fn to_le_bits(&self) -> FieldBits<Self::ReprBits> {
+        let bytes = self.to_repr();
+
+        #[cfg(target_pointer_width = "64")]
+        let limbs = [
+            u64::from_le_bytes(bytes[0..8].try_into().unwrap()),
+            u64::from_le_bytes(bytes[8..16].try_into().unwrap()),
+            u64::from_le_bytes(bytes[16..24].try_into().unwrap()),
+            u64::from_le_bytes(bytes[24..32].try_into().unwrap()),
+        ];
+
+        FieldBits::new(limbs)
+    }
+
+    fn char_le_bits() -> FieldBits<Self::ReprBits> {
+        FieldBits::new(MODULUS.0)
+    }
 }
 
 #[cfg(test)]

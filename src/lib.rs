@@ -10,6 +10,11 @@ mod arithmetic;
 mod curve;
 mod fq;
 mod fr;
+mod hashtocurve;
+mod serde_impl;
+
+pub mod grumpkin;
+pub mod bn256;
 
 #[cfg(test)]
 mod tests;
