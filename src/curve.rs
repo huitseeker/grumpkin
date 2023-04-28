@@ -94,6 +94,14 @@ const G1_B: Fq = Fq([
     0xcc388229877910c0,
     0x34394632b724eaa,
 ]);
+/*
+const G1_B: Fq = Fq([
+    0x43e1f593effffff0,
+    0x2833e84879b97091,
+    0xb85045b68181585d,
+    0x30644e72e131a029,
+]);
+*/
 
 const Bn256G1_GENERATOR_X: Fr = Fr::one();
 const Bn256G1_GENERATOR_Y: Fr = Fr::from_raw([2, 0, 0, 0]);

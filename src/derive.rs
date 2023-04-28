@@ -189,73 +189,92 @@ macro_rules! new_curve_impl {
 
                 Box::new(move |message| -> Self {
 
-                    let mut us = [$base::ZERO; 2];
-                    hashtocurve::hash_to_field($name::CURVE_ID, "", message, &mut us);
-                    let hash = us[0];
+                    //if !$name::curve_constant_b().eq(&$base::from_raw([3, 0, 0, 0])) {
+                    //    return $name::generator();
+                    //}
 
-                    let y_bit = (hash.0[3] >> 63) & 1;
-                    //println!("{:?}", hash);
-                    let mut x_coordinate = hash.clone();
-
-                    if $base::MODULUS_F.0[3] < 0x8000000000000000 {
-                        x_coordinate.0[3] = x_coordinate.0[3] & (!0x8000000000000000);
-                    }
-
-                    let x_out = x_coordinate.clone();
-                    // y^2 - x^3 = b
-                    // y^2 = x^3 + b
-                    // y = sqrt(x^3 + b)
-                    let y_out = (x_out.square() * x_out + $name::curve_constant_b()).sqrt();
-
-                    if bool::from(y_out.is_none()) {
-                        return $name_affine { x: $base::ZERO, y: $base::ZERO }.to_curve();
-                    }
-
-                    let mut y_out = y_out.unwrap();
-
+                    //let mut hash = $base::ONE + $base::ONE + $base::ONE + $base::ONE;
                     /*
-                    if (y_out.0[0] & 1) != y_bit {
-                        y_out = -y_out;
-                    }
+                    let one = $base::ONE;
+                    let two = one + one;
+                    let three = two + one;
+                    let hash = three + one;
                     */
-                    /*
-                    // bit 255
-                    //let y_bit = (hash.0[3] >> 63) & 1;
-                    let y_bit = hash.0[3] & 1;
+                    let mut idx = 0;
+                    loop {
+                        let mut us = [$base::ZERO; 2];
+                        //println!("Trying idx = {idx}");
+                        hashtocurve::hash_to_field($name::CURVE_ID, idx.to_string().as_str(), message, &mut us);
+                        let hash = us[0];
+                        //let hash = $base::ONE + $base::ONE;
 
-                    let x_out = x_coordinate.clone();
-                    let mut y_out = x_out.square().mul(x_out).add(Self::b());
-                    // TODO not sure \/
-                    //y_out = y_out.add(x_out.mul(Self::a()));
+                        //let b17 = Fq::from_raw([17, 0, 0, 0]).neg();
+                        //println!("MOD = {:?}\nB17 = {:?}", $base::MODULUS_F.sub($base::one()), b17);
 
-                    // When the sqrt of y_out doesn't exist, return 0.
-                    let y_sqrt = y_out.sqrt();
-                    if !bool::from(y_sqrt.is_some()) {
-                        return $name_affine { x: $base::ZERO, y: $base::ZERO }.to_curve();
+                        //println!("Trying x = {:?}", hash);
+                        let y_bit = (hash.0[3] >> 63) & 1;
+                        //println!("{:?}", hash);
+                        let mut x_coordinate = hash.clone();
+
+                        if $base::MODULUS_F.0[3] < 0x8000000000000000 {
+                            x_coordinate.0[3] = x_coordinate.0[3] & (!0x8000000000000000);
+                        }
+
+                        let x_out = x_coordinate.clone();
+                        // y^2 - x^3 = b
+                        // y^2 = x^3 + b
+                        //println!("X   = {:?}", x_out);
+                        //println!("X^3 = {:?}", x_out.square() * x_out);
+                        //println!("B   = {:?}", $name::curve_constant_b());
+                        let y_out_sq = (x_out.square() * x_out + $name::curve_constant_b());
+                        //println!("Y_OUT_SQ = {:?}", y_out_sq);
+                        // y = sqrt(x^3 + b)
+                        let y_out = y_out_sq.sqrt();
+                        //println!("Y_OUT = {:?}", y_out);
+
+                        if bool::from(y_out.is_none()) {
+                            //println!("NO SQRT");
+                            idx += 1;
+                            continue;
+                            //return $name_affine { x: $base::ZERO, y: $base::ZERO }.to_curve();
+                        }
+
+                        let mut y_out = y_out.unwrap();
+                        //println!("SQRT_Y_OUT = {:?}", y_out);
+
+                        /*
+                        println!("IS SQRT BROKEN?");
+                        assert_eq!(y_out_sq, y_out.square());
+                        println!("IT'S NOT!");
+                        */
+
+                        /*
+                        if (y_out.0[0] & 1) != y_bit {
+                            y_out = -y_out;
+                        }
+                        */
+
+                        //println!("{x_out:?}\n{y_out:?}");
+                        let pa = $name_affine { x: x_out, y: y_out };
+
+                        //let a = (pa.y.square() - pa.x.square() * pa.x);
+                        //println!("Y2X3 = {a:?}\nB    = {:?}", $name::curve_constant_b());
+                        //let c = a.ct_eq(&$name::curve_constant_b());
+                        //if !bool::from(c) {
+                            //println!("\nBUG\n{x_out:?}\n{y_out:?}\n");
+                        //    panic!();
+                        //}
+
+                        assert!(bool::from(pa.is_on_curve()));
+                        let p = pa.to_curve();
+                        assert!(bool::from(p.is_on_curve()));
+
+                        println!("POINT: {p:?}");
+                        println!("idx: {idx}");
+                        return p;
                     }
 
-                    if (y_out.0[0] & 1) != y_bit {
-                        y_out = y_out.neg();
-                    }
-                    */
-
-                    //println!("{x_out:?}\n{y_out:?}");
-                    let pa = $name_affine { x: x_out, y: y_out };
-
-                    let a = (pa.y.square() - pa.x.square() * pa.x);
-                    println!("Y2X3 = {a:?}\nB    = {:?}", $name::curve_constant_b());
-                    let c = a.ct_eq(&$name::curve_constant_b());
-                    if !bool::from(c) {
-                        println!("\nBUG\n{x_out:?}\n{y_out:?}\n");
-                        panic!();
-                    }
-
-                    assert!(bool::from(pa.is_on_curve()));
-                    let p = pa.to_curve();
-                    assert!(bool::from(p.is_on_curve()));
-
-                    //println!("{p:?}");
-                    p
+                    //$name::generator()
                 })
             }
 
@@ -579,7 +598,7 @@ macro_rules! new_curve_impl {
             fn is_on_curve(&self) -> Choice {
                 // y^2 - x^3 - ax ?= b
                 let a = (self.y.square() - self.x.square() * self.x).ct_eq(&$name::curve_constant_b());
-                println!("A IS {:?}", a);
+                //println!("A IS {:?}", a);
                 a | self.is_identity()
             }
 
