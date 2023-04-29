@@ -269,8 +269,8 @@ macro_rules! new_curve_impl {
                         let p = pa.to_curve();
                         assert!(bool::from(p.is_on_curve()));
 
-                        println!("POINT: {p:?}");
-                        println!("idx: {idx}");
+                        //println!("POINT: {p:?}");
+                        //println!("idx: {idx}");
                         return p;
                     }
 
