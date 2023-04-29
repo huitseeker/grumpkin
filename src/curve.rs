@@ -143,10 +143,14 @@ impl group::cofactor::CofactorGroup for Bn256G1 {
 mod tests {
     use crate::G1;
 
-    /*
     #[test]
     fn test_curve() {
         crate::tests::curve::curve_tests::<G1>();
     }
-    */
+
+    use crate::Bn256G1;
+    #[test]
+    fn test_bn256_curve() {
+        crate::tests::curve::curve_tests::<Bn256G1>();
+    }
 }
